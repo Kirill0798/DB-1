@@ -22,7 +22,30 @@ COURSES_LIST = [
     {"course_id": 9, "course_name": "Прогнозная аналитика и интеллектуальный анализ данных"},
     {"course_id": 10, "course_name": "Получение навыков обучения от Калифорнийского университета в Сан-Диего"},
     {"course_id": 11, "course_name": "Основы бизнеса"},
-    {"course_id": 12, "course_name": "Управление карьерным ростом"}
+    {"course_id": 12, "course_name": "Управление карьерным ростом"},
+    {"course_id": 13, "course_name": "Охрана труда"},
+    {"course_id": 14, "course_name": "Электробезопасность"},
+    {"course_id": 15, "course_name": "Управление стрессом"},
+    {"course_id": 16, "course_name": "Управление конфликтами и их регулировка (Compliance)"},
 ]
 
-EMPLOYEE_INSERT_TEMPLATE = ""
+EMPLOYEE_INSERT_TEMPLATE = "INSERT INTO public.employee (personnel_id, dept_id, grade_id, first_name, middle_name, " \
+                           "last_name, salary, hire_date) VALUES ({}, {}, {}, \'{}\', \'{}\', \'{}\', {}, \'{}\'); \n"
+
+EMPLOYEE_INSERT_TEMPLATE_PLUS_FIRE_DATE = "INSERT INTO public.employee (personnel_id, dept_id, grade_id, first_name, " \
+                                          "middle_name, last_name, salary, hire_date, fire_date) " \
+                                          "VALUES ({}, {}, {}, \'{}\', \'{}\', \'{}\', {}, \'{}\', \'{}\'); \n"
+
+BUSINESS_TRIP_INSERT_TEMPLATE = "INSERT INTO public.employee (id, trip_id, personnel_id, city, start_date, end_date" \
+                           "day_salary) VALUES ({}, {}, {}, {}, {}, {}, {}); \n"
+
+DEPARTMENT_GRADE = [
+    {"department": 1, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 2, "grades": [6, 7]},
+    {"department": 3, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 4, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 5, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 6, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 7, "grades": [1, 2, 3, 4, 5, 8]},
+    {"department": 8, "grades": [8]}
+]
