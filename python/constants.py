@@ -36,8 +36,8 @@ EMPLOYEE_INSERT_TEMPLATE_PLUS_FIRE_DATE = "INSERT INTO public.employee (personne
                                           "middle_name, last_name, salary, hire_date, fire_date) " \
                                           "VALUES ({}, {}, {}, \'{}\', \'{}\', \'{}\', {}, \'{}\', \'{}\'); \n"
 
-BUSINESS_TRIP_INSERT_TEMPLATE = "INSERT INTO public.employee (id, trip_id, personnel_id, city, start_date, end_date" \
-                           "day_salary) VALUES ({}, {}, {}, {}, {}, {}, {}); \n"
+BUSINESS_TRIP_INSERT_TEMPLATE = "INSERT INTO public.business_trip (id, trip_id, personnel_id, city, start_date, " \
+                                "end_date, day_salary) VALUES ({}, {}, {}, \'{}\', \'{}\', \'{}\', {}); \n"
 
 DEPARTMENT_GRADE = [
     {"department": 1, "grades": [1, 2, 3, 4, 5, 8]},
