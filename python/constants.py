@@ -39,6 +39,9 @@ EMPLOYEE_INSERT_TEMPLATE_PLUS_FIRE_DATE = "INSERT INTO public.employee (personne
 BUSINESS_TRIP_INSERT_TEMPLATE = "INSERT INTO public.business_trip (id, trip_id, personnel_id, city, start_date, " \
                                 "end_date, day_salary) VALUES ({}, {}, {}, \'{}\', \'{}\', \'{}\', {}); \n"
 
+EMPLOYEE_INFO_INSERT_TEMPLATE = "INSERT INTO public.employee_info (personnel_id, birth_date, adress , phone) " \
+                                "VALUES ({}, \'{}\', \'{}\', {}); \n"
+
 DEPARTMENT_GRADE = [
     {"department": 1, "grades": [1, 2, 3, 4, 5, 8]},
     {"department": 2, "grades": [6, 7]},
