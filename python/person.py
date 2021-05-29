@@ -8,13 +8,17 @@ EMPLOYEES_FIRED_COUNT = 2500
 DATE_PATTERN = "%d.%m.%Y"
 GRADE_COUNT = 8
 JOINT_COUNT = 10
+MAX_BIRTH_DATE = '1995-01-01'
+MAX_ROWS_IN_FILE = 100000
 
+BUSINESS_TRIP_FILE = "output/business_trip_insert_{}.sql"
 fake = Faker('ru_RU')
 Faker.seed(0)
 
 text_file_employee = open("output/employee_insert.sql", "w")
 text_file_employee_fired = open("output/employee_fired_insert.sql", "w")
-text_file_joint_business_trip = open("output/business_trip_insert.sql", "w")
+text_file_employee_info = open("output/employee_info_insert.sql", "w")
+
 
 # Пришлось ввести для информации о поездках:
 columns = ['personnel_id', 'dept_id', 'grade_id', 'first_name', 'middle_name', 'last_name', 'salary', 'hire_date',
@@ -32,6 +36,10 @@ hire_date_list = []
 fire_date_list = []
 hire_date_origin_list = []
 fire_date_origin_list = []
+
+FILE_COUNT = 1
+FILE_RECORDS = 0
+text_file_joint_business_trip = open(BUSINESS_TRIP_FILE.format(FILE_COUNT), "w")
 
 
 def form_common_information():
@@ -70,31 +78,26 @@ def form_common_information():
     hire_date_list.append(date)
     hire_date_origin_list.append(date_origin)
 
-    return department_id, grade_id, first_name, middle_name, last_name, salary, date, date_origin
+    return date_origin
 
 
 def fill_with_employees():
     for i in range(EMPLOYEES_COUNT):
-        department_id, grade_id, first_name, middle_name, last_name, salary, date, date_origin = form_common_information()
+        form_common_information()
+
         fire_date_list.append('')
         fire_date_origin_list.append('')
-
-        # Формирование инсерта:
-        s = EMPLOYEE_INSERT_TEMPLATE.format(i, department_id, grade_id, first_name, middle_name, last_name, salary, date)
 
 
 def fill_with_resigned_employees():
     for i in range(EMPLOYEES_FIRED_COUNT):
-        department_id, grade_id, first_name, middle_name, last_name, salary, date, date_origin = form_common_information()
+        date_origin = form_common_information()
 
         # Дата увольнения:
         date_of_resigned_origin = fake.date_between(start_date=date_origin)
         date_of_resigned = date_of_resigned_origin.strftime(DATE_PATTERN)
         fire_date_list.append(date_of_resigned)
         fire_date_origin_list.append(date_of_resigned_origin)
-
-        s = EMPLOYEE_INSERT_TEMPLATE_PLUS_FIRE_DATE.format(i + EMPLOYEES_COUNT, department_id, grade_id, first_name,
-                                                           middle_name, last_name, salary, date, date_of_resigned)
 
 
 def set_values_to_dataframe():
@@ -129,9 +132,11 @@ def write_empl_rows_to_files():
 def write_business_rows_to_files(dataframe, trip_id, last_hire_date, first_fire_date):
     city = fake.city_name()
 
+    # начало / конец командировки:
     start_date = fake.date_between(last_hire_date, first_fire_date)
     end_date = fake.date_between(start_date, first_fire_date)
 
+    # форматирование дат:
     start_date = start_date.strftime(DATE_PATTERN)
     end_date = end_date.strftime(DATE_PATTERN)
 
@@ -141,18 +146,31 @@ def write_business_rows_to_files(dataframe, trip_id, last_hire_date, first_fire_
         text_file_joint_business_trip.write(s)
 
 
+def write_empl_info_rows_to_files(personnel_id, birth_date, adress, phone):
+    s = EMPLOYEE_INFO_INSERT_TEMPLATE.format(personnel_id, birth_date, adress, phone)
+    text_file_employee_info.write(s)
+
+
 def joint_business_trip(travelers_count=10):
+    global text_file_joint_business_trip, FILE_COUNT, FILE_RECORDS
     business_df = df.loc[:travelers_count, ['personnel_id', 'salary', 'hire_date_origin', 'fire_date_origin']]
+
 
     # index - trip-id
     trip_id = 0
     for index in range(len(business_df)):
+        if FILE_RECORDS > MAX_ROWS_IN_FILE:
+            FILE_COUNT += 1
+            text_file_joint_business_trip.close()
+            text_file_joint_business_trip = open(BUSINESS_TRIP_FILE.format(FILE_COUNT), 'w')
+            FILE_RECORDS = 0
+
         # Количество людей в одной поездке:
         rand = random.randrange(1, JOINT_COUNT)
 
         if (trip_id + rand) >= len(business_df):
             break
-        # Выделяем dataframe:
+        # Выделяем dataframe (кто едет):
         indexes_for_taken = list(range(trip_id, trip_id + rand))
         trip_id += rand
         index += rand
@@ -167,14 +185,35 @@ def joint_business_trip(travelers_count=10):
 
         fire_date_one_trip.sort()
 
+        # Если есть кто-то из выбранных людей, кто уволился, то выбрасываем тех из командировки,
+        # кто устроился позже увольнения сотрудника:
         if fire_date_one_trip:
             current_df = current_df[current_df["hire_date_origin"] < fire_date_one_trip[0]]
 
         hire_date_one_trip = current_df["hire_date_origin"].tolist()
         hire_date_one_trip.sort()
 
+        # Если никто не уволился, то диапазон возможных дат командировки – до сегодняшнего дня:
         first_fire_date = fire_date_one_trip[0] if (fire_date_one_trip and fire_date_one_trip[0] != '') else 'today'
-        write_business_rows_to_files(current_df, trip_id, hire_date_one_trip[-1], first_fire_date)
+
+        if not hire_date_one_trip:
+            print("lol")
+        try:
+            write_business_rows_to_files(current_df, trip_id, hire_date_one_trip[-1], first_fire_date)
+            FILE_RECORDS += 1
+        except IndexError:
+            print("Ooops, try again")
+
+
+def create_employee_info():
+    phone = 123460
+    for index, row in df.iterrows():
+        personnel_id = row["personnel_id"]
+        birth_date = fake.date(pattern=DATE_PATTERN, end_datetime='-25y')
+        adress = fake.address()
+        phone += 13
+
+        write_empl_info_rows_to_files(personnel_id, birth_date, adress, phone)
 
 
 if __name__ == '__main__':
@@ -182,10 +221,16 @@ if __name__ == '__main__':
     fill_with_resigned_employees()
     fill_with_employees()
     set_values_to_dataframe()
+
+    # Записываем в файлик:
     write_empl_rows_to_files()
 
+    # Инсерты для информации о сотрудниках:
+    create_employee_info()
 
-    # Перемешаем данные:
-    df = df.sample(frac=1)
-    joint_business_trip()
+    # Инсерт для командировок:
+    for _ in range(1000):
+        # Перемешаем данные:
+        df = df.sample(frac=1)
 
+        joint_business_trip()
