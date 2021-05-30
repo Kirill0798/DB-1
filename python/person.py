@@ -10,6 +10,8 @@ GRADE_COUNT = 8
 JOINT_COUNT = 10
 MAX_BIRTH_DATE = '1995-01-01'
 MAX_ROWS_IN_FILE = 100000
+FLY_ID = 5
+TRIP_ID = 5
 
 BUSINESS_TRIP_FILE = "output/business_trip_insert_{}.sql"
 fake = Faker('ru_RU')
@@ -130,6 +132,8 @@ def write_empl_rows_to_files():
 
 
 def write_business_rows_to_files(dataframe, trip_id, last_hire_date, first_fire_date):
+    global FLY_ID
+
     city = fake.city_name()
 
     # начало / конец командировки:
@@ -140,9 +144,10 @@ def write_business_rows_to_files(dataframe, trip_id, last_hire_date, first_fire_
     start_date = start_date.strftime(DATE_PATTERN)
     end_date = end_date.strftime(DATE_PATTERN)
 
-    for index_w, row in dataframe.iterrows():
-        s = BUSINESS_TRIP_INSERT_TEMPLATE.format(index_w, trip_id, row["personnel_id"], city, start_date, end_date,
+    for _, row in dataframe.iterrows():
+        s = BUSINESS_TRIP_INSERT_TEMPLATE.format(FLY_ID, trip_id, row["personnel_id"], city, start_date, end_date,
                                                  row["salary"] / 20 * 2)
+        FLY_ID += 1
         text_file_joint_business_trip.write(s)
 
 
@@ -152,12 +157,10 @@ def write_empl_info_rows_to_files(personnel_id, birth_date, adress, phone):
 
 
 def joint_business_trip(travelers_count=10):
-    global text_file_joint_business_trip, FILE_COUNT, FILE_RECORDS
+    global text_file_joint_business_trip, FILE_COUNT, FILE_RECORDS, TRIP_ID
     business_df = df.loc[:travelers_count, ['personnel_id', 'salary', 'hire_date_origin', 'fire_date_origin']]
 
-
-    # index - trip-id
-    trip_id = 0
+    temp = 0
     for index in range(len(business_df)):
         if FILE_RECORDS > MAX_ROWS_IN_FILE:
             FILE_COUNT += 1
@@ -168,11 +171,11 @@ def joint_business_trip(travelers_count=10):
         # Количество людей в одной поездке:
         rand = random.randrange(1, JOINT_COUNT)
 
-        if (trip_id + rand) >= len(business_df):
+        if (temp + rand) >= len(business_df):
             break
         # Выделяем dataframe (кто едет):
-        indexes_for_taken = list(range(trip_id, trip_id + rand))
-        trip_id += rand
+        indexes_for_taken = list(range(temp, temp + rand))
+        temp += rand
         index += rand
         current_df = business_df.take(indexes_for_taken)
 
@@ -199,8 +202,9 @@ def joint_business_trip(travelers_count=10):
         if not hire_date_one_trip:
             print("lol")
         try:
-            write_business_rows_to_files(current_df, trip_id, hire_date_one_trip[-1], first_fire_date)
+            write_business_rows_to_files(current_df, TRIP_ID, hire_date_one_trip[-1], first_fire_date)
             FILE_RECORDS += 1
+            TRIP_ID += 1
         except IndexError:
             print("Ooops, try again")
 
